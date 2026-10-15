@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DriveFleet — Database Connected Dashboard</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#f5f5f3;color:#111}
+.app{display:flex;height:100vh;background:#f5f5f3}
+.sidebar{width:56px;background:#fff;border-right:.5px solid rgba(0,0,0,.1);display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:4px;flex-shrink:0}
+.s-btn{width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;background:transparent;color:#888}
+.s-btn:hover{background:#f1f1ee;color:#222}.s-btn.active{background:#E1F5EE;color:#0F6E56}.s-btn svg{width:17px;height:17px}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}.topbar{height:48px;background:#fff;border-bottom:.5px solid rgba(0,0,0,.1);display:flex;align-items:center;justify-content:space-between;padding:0 16px;flex-shrink:0}
+.page-title{font-size:14px;font-weight:500}.tabs{display:flex;gap:2px}.tab{padding:5px 12px;font-size:12px;border-radius:8px;cursor:pointer;border:none;background:transparent;color:#888}.tab.active{background:#E1F5EE;color:#0F6E56;font-weight:500}
+.body{display:flex;flex:1;overflow:hidden}.filters{width:220px;flex-shrink:0;background:#fff;border-right:.5px solid rgba(0,0,0,.1);padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:18px}
+.f-label{font-size:11px;font-weight:500;color:#888;margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em}.check-row{display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer}.check-row input{accent-color:#1D9E75;width:14px;height:14px;cursor:pointer}.check-row span{font-size:13px}.badge-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}.slider-val{display:flex;justify-content:space-between;font-size:12px;color:#888;margin-top:6px}input[type=range]{width:100%;accent-color:#1D9E75}
+.content{flex:1;overflow-y:auto;padding:14px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}.stat{background:#fff;border:.5px solid rgba(0,0,0,.1);border-radius:12px;padding:10px 12px}.stat-n{font-size:20px;font-weight:500;line-height:1}.stat-l{font-size:11px;color:#888;margin-top:4px}
+.panel{background:#fff;border:.5px solid rgba(0,0,0,.1);border-radius:12px;overflow:hidden;margin-bottom:12px}.ph{padding:10px 14px;border-bottom:.5px solid rgba(0,0,0,.08);font-size:13px;font-weight:500;display:flex;justify-content:space-between;align-items:center;gap:10px}.ph-count{font-size:12px;color:#888;font-weight:400}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:880px}th{font-size:11px;font-weight:500;color:#888;text-align:left;padding:7px 14px;background:#fafaf8;white-space:nowrap}td{font-size:13px;padding:8px 14px;border-top:.5px solid rgba(0,0,0,.07);vertical-align:top}tr:hover td{background:#fafaf8}
+.badge{display:inline-flex;align-items:center;font-size:11px;font-weight:500;padding:2px 8px;border-radius:100px;white-space:nowrap}.b-av{background:#EAF3DE;color:#3B6D11}.b-re{background:#FAEEDA;color:#854F0B}.b-os{background:#FCEBEB;color:#A32D2D}.b-ac{background:#E1F5EE;color:#0F6E56}.b-co{background:#E6F1FB;color:#185FA5}.b-pe{background:#FAEEDA;color:#854F0B}.b-ca{background:#FCEBEB;color:#A32D2D}.b-ne{background:#eee;color:#555}.b-ma{background:#F1ECFA;color:#673AB7}
+.av{width:26px;height:26px;border-radius:50%;background:#E1F5EE;color:#0F6E56;font-size:10px;font-weight:500;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}.star{color:#EF9F27;font-size:12px}.empty{text-align:center;padding:32px;color:#888;font-size:13px}.muted{color:#888}.small{font-size:12px}.nowrap{white-space:nowrap}.pill-list{display:flex;flex-wrap:wrap;gap:4px}.pill{font-size:11px;background:#f1f1ee;border-radius:999px;padding:2px 7px;color:#555}.error{background:#FCEBEB;color:#A32D2D;border:.5px solid rgba(163,45,45,.25);border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:12px;display:none}.select{border:.5px solid rgba(0,0,0,.15);border-radius:8px;padding:6px 8px;background:#fff;font-size:12px;color:#111}.loading{padding:30px;text-align:center;color:#888;font-size:13px}
+.admin-grid{display:grid;grid-template-columns:1fr;gap:12px}.admin-actions{display:flex;gap:8px;flex-wrap:wrap}.btn{border:.5px solid rgba(0,0,0,.15);background:#fff;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;color:#111}.btn:hover{background:#f1f1ee}.btn.primary{background:#1D9E75;color:#fff;border-color:#1D9E75}.btn.danger{background:#FCEBEB;color:#A32D2D;border-color:rgba(163,45,45,.25)}.btn.small{padding:4px 8px;font-size:11px}.admin-form{display:none;padding:12px 14px;border-bottom:.5px solid rgba(0,0,0,.08);background:#fafaf8}.admin-form.open{display:block}.form-grid{display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:10px}.field{display:flex;flex-direction:column;gap:4px}.field label{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.04em}.field input,.field select{border:.5px solid rgba(0,0,0,.16);border-radius:8px;padding:7px 8px;font-size:12px;background:#fff;color:#111}.form-actions{display:flex;gap:8px;margin-top:10px}.admin-note{font-size:12px;color:#888;margin-top:6px}.relation-box{margin-top:10px;border:.5px solid rgba(0,0,0,.10);border-radius:10px;background:#fff;padding:10px}.relation-title{font-size:11px;font-weight:500;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}.check-grid{display:grid;grid-template-columns:repeat(4,minmax(130px,1fr));gap:6px 12px}.admin-check{display:flex;align-items:center;gap:7px;font-size:12px;color:#111;cursor:pointer}.admin-check input{accent-color:#1D9E75}.row-actions{display:flex;gap:6px;flex-wrap:wrap}.actions-col{min-width:118px;position:sticky;left:0;background:#fff;z-index:2}.actions-col-head{min-width:118px;position:sticky;left:0;z-index:3}.admin-help{font-size:12px;color:#666;padding:8px 14px;background:#fafaf8;border-bottom:.5px solid rgba(0,0,0,.08)}.admin-split{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}.mini-stat{background:#fff;border:.5px solid rgba(0,0,0,.1);border-radius:12px;padding:10px 12px}.mini-stat strong{display:block;font-size:18px;font-weight:500}.mini-stat span{font-size:11px;color:#888}@media(max-width:1100px){.form-grid{grid-template-columns:repeat(2,minmax(140px,1fr))}.admin-split{grid-template-columns:1fr}}@media(max-width:700px){.form-grid{grid-template-columns:1fr}.check-grid{grid-template-columns:1fr}}
+th.sortable{cursor:pointer;user-select:none}th.sortable:hover{color:#111}th.sort-asc::after{content:' ▲';font-size:9px}th.sort-desc::after{content:' ▼';font-size:9px}
+@media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}.filters{width:190px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="sidebar">
+    <button class="s-btn active" title="Vehicles" onclick="showPage('vehicles',this)"><svg viewBox="0 0 17 17" fill="none"><path d="M2 11h13M3 11V8.5l1.5-3h9l1.5 3V11M4.5 13.5a1.2 1.2 0 1 0 2.4 0 1.2 1.2 0 0 0-2.4 0M10.1 13.5a1.2 1.2 0 1 0 2.4 0 1.2 1.2 0 0 0-2.4 0" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+    <button class="s-btn" title="Customers" onclick="showPage('customers',this)"><svg viewBox="0 0 17 17" fill="none"><circle cx="8.5" cy="6" r="3.2" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 15c0-3.866 3.134-6 7-6s7 2.134 7 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+    <button class="s-btn" title="Rentals" onclick="showPage('rentals',this)"><svg viewBox="0 0 17 17" fill="none"><rect x="2" y="3" width="13" height="11" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M2 7h13M6 3v2M11 3v2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+    <button class="s-btn" title="Payments" onclick="showPage('payments',this)"><svg viewBox="0 0 17 17" fill="none"><rect x="1.5" y="4" width="14" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 7.5h14" stroke="currentColor" stroke-width="1.3"/></svg></button>
+    <button class="s-btn" title="Maintenance" onclick="showPage('maintenance',this)"><svg viewBox="0 0 17 17" fill="none"><path d="M10.5 2.5l4 4-8 8H2.5v-4l8-8z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M9.5 3.5l4 4" stroke="currentColor" stroke-width="1.3"/></svg></button>
+    <button class="s-btn" title="Reports" onclick="showPage('reports',this)"><svg viewBox="0 0 17 17" fill="none"><rect x="3" y="2" width="11" height="13" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5.5 6h6M5.5 9h6M5.5 12h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+    <button class="s-btn" title="Admin Panel" onclick="showPage('admin',this)"><svg viewBox="0 0 17 17" fill="none"><path d="M8.5 2.2l5 2v3.5c0 3.2-2 5.6-5 7.1-3-1.5-5-3.9-5-7.1V4.2l5-2z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"/><path d="M6.2 8.6l1.5 1.5 3.3-3.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="page-title" id="ptitle">Vehicle Fleet</span>
+      <div class="tabs" id="tabbar">
+        <button class="tab active" onclick="filterStatus('all',this)">All</button>
+        <button class="tab" onclick="filterStatus('AVAILABLE',this)">Available</button>
+        <button class="tab" onclick="filterStatus('RENTED',this)">Rented</button>
+        <button class="tab" onclick="filterStatus('OUT_OF_SERVICE',this)">Out of Service</button>
+      </div>
+    </div>
+
+    <div class="body">
+      <div class="filters" id="fsidebar"></div>
+      <div class="content">
+        <div id="apiError" class="error"></div>
+
+        <div id="pg-vehicles">
+          <div class="stats">
+            <div class="stat"><div class="stat-n" id="s-all">0</div><div class="stat-l">Total Vehicles</div></div>
+            <div class="stat"><div class="stat-n" style="color:#1D9E75" id="s-av">0</div><div class="stat-l">Available</div></div>
+            <div class="stat"><div class="stat-n" style="color:#EF9F27" id="s-re">0</div><div class="stat-l">Rented</div></div>
+            <div class="stat"><div class="stat-n" style="color:#E24B4A" id="s-os">0</div><div class="stat-l">Out of Service</div></div>
+          </div>
+          <div class="panel">
+            <div class="ph"><span>Vehicles</span><span class="ph-count" id="vcount"></span></div>
+            <div class="table-wrap"><table>
+              <thead><tr><th>Vehicle</th><th>Plate</th><th>Category</th><th>Features</th><th>Fuel</th><th>Transmission</th><th>Daily Rate</th><th>Mileage</th><th>Branch</th><th>Status</th></tr></thead>
+              <tbody id="vtable"><tr><td colspan="10" class="loading">Loading vehicles from database...</td></tr></tbody>
+            </table></div>
+          </div>
+        </div>
+
+        <div id="pg-customers" style="display:none">
+          <div class="panel">
+            <div class="ph"><span>Customers</span><span class="ph-count" id="ccount"></span></div>
+            <div class="table-wrap"><table>
+              <thead><tr><th>Customer</th><th>Email</th><th>Phone</th><th>License No</th><th>Role</th><th>Total Rentals</th><th>Avg Rating</th></tr></thead>
+              <tbody id="ctable"></tbody>
+            </table></div>
+          </div>
+        </div>
+
+        <div id="pg-rentals" style="display:none">
+          <div class="stats">
+            <div class="stat"><div class="stat-n" id="rs-total">0</div><div class="stat-l">Total</div></div>
+            <div class="stat"><div class="stat-n" style="color:#1D9E75" id="rs-active">0</div><div class="stat-l">Active</div></div>
+            <div class="stat"><div class="stat-n" style="color:#854F0B" id="rs-pending">0</div><div class="stat-l">Pending</div></div>
+            <div class="stat"><div class="stat-n" style="color:#185FA5" id="rs-completed">0</div><div class="stat-l">Completed</div></div>
+          </div>
+          <div class="panel">
+            <div class="ph"><span>Rentals</span><span class="ph-count" id="rcount"></span></div>
+            <div class="table-wrap"><table>
+              <thead><tr><th>#</th><th>Customer</th><th>Vehicle</th><th>Pickup</th><th>Return</th><th>Dates</th><th>Insurance</th><th>Insurance / Day</th><th>Total</th><th>Status</th></tr></thead>
+              <tbody id="rtable"></tbody>
+            </table></div>
+          </div>
+        </div>
+
+        <div id="pg-payments" style="display:none">
+          <div class="stats">
+            <div class="stat"><div class="stat-n" id="ps-monthly">₺0</div><div class="stat-l">Monthly Revenue</div></div>
+            <div class="stat"><div class="stat-n" style="color:#1D9E75" id="ps-card">₺0</div><div class="stat-l">Credit Card</div></div>
+            <div class="stat"><div class="stat-n" style="color:#185FA5" id="ps-cash">₺0</div><div class="stat-l">Cash</div></div>
+            <div class="stat"><div class="stat-n" style="color:#854F0B" id="ps-bank">₺0</div><div class="stat-l">Bank Transfer</div></div>
+          </div>
+          <div class="panel">
+            <div class="ph"><span>Payment History</span><span class="ph-count" id="pcount"></span></div>
+            <div class="table-wrap"><table>
+              <thead><tr><th>#</th><th>Rental</th><th>Amount</th><th>Date</th><th>Method</th><th>Status</th></tr></thead>
+              <tbody id="ptable"></tbody>
+            </table></div>
+          </div>
+        </div>
+
+        <div id="pg-maintenance" style="display:none">
+          <div class="panel">
+            <div class="ph"><span>Maintenance Dashboard</span><span class="ph-count" id="mcount"></span></div>
+            <div class="table-wrap"><table>
+              <thead><tr><th>#</th><th>Vehicle</th><th>Plate</th><th>Vehicle Status</th><th>Branch</th><th>Service Type</th><th>Description</th><th>Cost</th><th>Date</th><th>Status</th></tr></thead>
+              <tbody id="mtable"></tbody>
+            </table></div>
+          </div>
+        </div>
+
+        <div id="pg-reports" style="display:none">
+          <div class="panel">
+            <div class="ph">
+              <span>SQL View Reports</span>
+              <select id="reportSelect" class="select" onchange="renderReports()">
+                <option value="vehicleFullDetails">Vehicle Full Details</option>
+                <option value="categoryFeature">Vehicle Category / Feature Report</option>
+                <option value="rentalInsurance">Rental Insurance Report</option>
+                <option value="insuranceUsage">Insurance Usage Report</option>
+                <option value="outOfService">Out of Service Vehicle Report</option>
+                <option value="complexPaymentInsurance">Complex Rental Payment / Insurance Report</option>
+                <option value="fleetSummary">Fleet Summary</option>
+                <option value="monthlyRevenue">Monthly Revenue</option>
+              </select>
+            </div>
+            <div class="table-wrap"><table id="reportTable"><thead id="reportHead"></thead><tbody id="reportBody"></tbody></table></div>
+          </div>
+        </div>
+
+        <div id="pg-admin" style="display:none">
+          <div class="admin-split">
+            <div class="mini-stat"><strong id="adminVehicleCount">0</strong><span>Vehicles in database</span></div>
+            <div class="mini-stat"><strong id="adminCustomerCount">0</strong><span>Customers in database</span></div>
+          </div>
+
+          <div class="admin-grid">
+            <div class="panel">
+              <div class="ph">
+                <span>Admin Panel — Vehicle Management</span>
+                <div class="admin-actions">
+                  <button class="btn primary" onclick="openVehicleForm()">Add Vehicle</button>
+                  <button class="btn" onclick="loadData()">Refresh Data</button>
+                </div>
+              </div>
+            
+              <form id="vehicleForm" class="admin-form" onsubmit="submitVehicle(event)">
+                <input type="hidden" id="vehicleId">
+                <div class="form-grid">
+                  <div class="field"><label>Brand</label><input id="vBrand" required placeholder="Toyota"></div>
+                  <div class="field"><label>Model</label><input id="vModel" required placeholder="Corolla"></div>
+                  <div class="field"><label>Year</label><input id="vYear" required type="number" min="1980" max="2035" placeholder="2024"></div>
+                  <div class="field"><label>Plate</label><input id="vPlate" required placeholder="34 ABC 123"></div>
+                  <div class="field"><label>Fuel</label><select id="vFuel"><option>Gasoline</option><option>Diesel</option><option>Electric</option><option>Hybrid</option></select></div>
+                  <div class="field"><label>Transmission</label><select id="vTrans"><option>Automatic</option><option>Manual</option></select></div>
+                  <div class="field"><label>Daily Rate</label><input id="vPrice" required type="number" min="1" step="0.01" placeholder="750"></div>
+                  <div class="field"><label>Mileage</label><input id="vKm" required type="number" min="0" placeholder="25000"></div>
+                  <div class="field"><label>Branch</label><select id="vBranch"></select></div>
+                  <div class="field"><label>Status</label><select id="vStatus"><option>AVAILABLE</option><option>RENTED</option><option>OUT_OF_SERVICE</option></select></div>
+                </div>
+                <div class="relation-box">
+                  <div class="relation-title">Vehicle Categories</div>
+                  <div id="vehicleCategoryChecks" class="check-grid"></div>
+                </div>
+                <div class="relation-box">
+                  <div class="relation-title">Vehicle Features</div>
+                  <div id="vehicleFeatureChecks" class="check-grid"></div>
+                </div>
+                <div class="form-actions">
+                  <button class="btn primary" type="submit" id="vehicleSubmitBtn">Save Vehicle</button>
+                  <button class="btn" type="button" onclick="closeVehicleForm()">Cancel</button>
+                </div>
+                
+              </form>
+              <div class="table-wrap"><table>
+                <thead><tr><th class="actions-col-head">Actions</th><th>ID</th><th>Vehicle</th><th>Plate</th><th>Categories</th><th>Features</th><th>Fuel</th><th>Transmission</th><th>Daily Rate</th><th>Mileage</th><th>Branch</th><th>Status</th></tr></thead>
+                <tbody id="adminVehicleTable"></tbody>
+              </table></div>
+            </div>
+
+            <div class="panel">
+              <div class="ph">
+                <span>Admin Panel — Customer Management</span>
+                <div class="admin-actions">
+                  <button class="btn primary" onclick="openCustomerForm()">Add Customer</button>
+                  <button class="btn" onclick="loadData()">Refresh Data</button>
+                </div>
+              </div>
+              <form id="customerForm" class="admin-form" onsubmit="submitCustomer(event)">
+                <input type="hidden" id="customerId">
+                <div class="form-grid">
+                  <div class="field"><label>Full Name</label><input id="cName" required placeholder="Ali Demir"></div>
+                  <div class="field"><label>Email</label><input id="cEmail" required type="email" placeholder="ali@email.com"></div>
+                  <div class="field"><label>Phone</label><input id="cPhone" placeholder="+90 555 000 00 00"></div>
+                  <div class="field"><label>License No</label><input id="cLicense" placeholder="B-015678"></div>
+                  <div class="field"><label>Role</label><select id="cRole"><option value="customer">Customer</option><option value="admin">Admin</option></select></div>
+                  <div class="field"><label>Average Rating</label><input id="cRating" type="number" min="1" max="5" step="0.1" placeholder="4.5"></div>
+                  <div class="field"><label>Total Rentals</label><input id="cRentals" type="number" min="0" placeholder="0"></div>
+                </div>
+                <div class="form-actions">
+                  <button class="btn primary" type="submit" id="customerSubmitBtn">Save Customer</button>
+                  <button class="btn" type="button" onclick="closeCustomerForm()">Cancel</button>
+                </div>
+              </form>
+              <div class="table-wrap"><table>
+                <thead><tr><th class="actions-col-head">Actions</th><th>ID</th><th>Customer</th><th>Email</th><th>Phone</th><th>License No</th><th>Role</th><th>Total Rentals</th><th>Avg Rating</th></tr></thead>
+                <tbody id="adminCustomerTable"></tbody>
+              </table></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_BASE = 'http://localhost:3000/api';
+
+const state = {
+  page: 'vehicles',
+  vehicles: [], customers: [], rentals: [], payments: [], maintenance: [], branches: [], categories: [], features: [], adminVehicles: [], adminCustomers: [],
+  paymentSummary: {}, rentalSummary: {},
+  reports: {
+    vehicleFullDetails: [], categoryFeature: [], rentalInsurance: [], insuranceUsage: [],
+    outOfService: [], complexPaymentInsurance: [], fleetSummary: [], monthlyRevenue: []
+  }
+};
+
+const statusLabels = {AVAILABLE:'Available', RENTED:'Rented', OUT_OF_SERVICE:'Out of Service', ACTIVE:'Active', PENDING:'Pending', COMPLETED:'Completed', CANCELLED:'Cancelled', Completed:'Completed', Pending:'Pending', Refunded:'Refunded', PLANNED:'Planned', IN_PROGRESS:'In Progress'};
+const statusClass = {AVAILABLE:'b-av', RENTED:'b-re', OUT_OF_SERVICE:'b-os', ACTIVE:'b-ac', PENDING:'b-pe', COMPLETED:'b-co', CANCELLED:'b-ca', Completed:'b-co', Pending:'b-pe', Refunded:'b-ca', PLANNED:'b-pe', IN_PROGRESS:'b-ma'};
+const fuelColors = {Gasoline:'#1D9E75', Diesel:'#185FA5', Electric:'#EF9F27', Hybrid:'#9F77DD'};
+
+let currentStatus = 'all';
+let maxPrice = 30000;
+
+function money(v){ return '₺' + Number(v || 0).toLocaleString('tr-TR', {maximumFractionDigits:0}); }
+function number(v){ return Number(v || 0).toLocaleString('tr-TR'); }
+// Escape text from the database before it is placed into HTML (prevents HTML/script injection).
+function esc(v){ return String(v).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+function safe(v){ return v === null || v === undefined || v === '' ? '—' : esc(v); }
+function initials(name){ return esc(String(name || '?').split(' ').map(x => x[0]).join('').slice(0,2).toUpperCase()); }
+function badge(value){ return `<span class="badge ${statusClass[value] || 'b-ne'}">${statusLabels[value] || safe(value)}</span>`; }
+function pills(text){
+  if(!text) return '<span class="muted">—</span>';
+  return `<div class="pill-list">${String(text).split(',').map(x => `<span class="pill">${esc(x.trim())}</span>`).join('')}</div>`;
+}
+function formatDate(v){
+  if(!v) return '—';
+  const d = new Date(v);
+  if(Number.isNaN(d.getTime())) return esc(String(v).slice(0,10));
+  return d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+}
+async function getJSON(path){
+  const res = await fetch(`${API_BASE}${path}`);
+  if(!res.ok) throw new Error(`${path} returned ${res.status}`);
+  return res.json();
+}
+function showError(msg){
+  const el = document.getElementById('apiError');
+  el.textContent = msg;
+  el.style.display = msg ? 'block' : 'none';
+}
+
+// ------------------------------------------------------------
+// Sorting: click a column header to sort (click again to reverse).
+// The Vehicle Fleet page also has a "Sort By" menu in the filter sidebar.
+// ------------------------------------------------------------
+const sortState = { vtable: { key: 'id', dir: 1 } }; // dir: 1 = ascending, -1 = descending
+const sortColumns = { // data field behind each column header (null = not sortable)
+  vtable: ['brand','plate','categories','features','fuel','trans','price','km','branch','status'],
+  ctable: ['customer','email','phone','license_no','role','total_rentals','avg_rating'],
+  rtable: ['rental_id','customer','vehicle','pickup','return_location','start_date','insurance_type','insurance_daily_price','total','status'],
+  ptable: ['payment_id','rental_id','amount','payment_date','method','status'],
+  mtable: ['maintenance_id','vehicle','plate','vehicle_status','branch','service_type','description','cost','service_date','maintenance_status'],
+  adminVehicleTable: [null,'id','brand','plate','category_names','feature_names','fuel_type','transmission','daily_rate','mileage','branch_city','status'],
+  adminCustomerTable: [null,'id','full_name','email','phone','license_no','role','total_rentals','avg_rating']
+};
+const vehicleSortOptions = [
+  ['id:1', 'Default order'],
+  ['price:1', 'Daily price: low to high'], ['price:-1', 'Daily price: high to low'],
+  ['year:-1', 'Year: newest first'], ['year:1', 'Year: oldest first'],
+  ['km:1', 'Mileage: low to high'], ['km:-1', 'Mileage: high to low'],
+  ['brand:1', 'Brand: A to Z'], ['brand:-1', 'Brand: Z to A']
+];
+const sortRenderers = () => ({
+  vtable: renderVehicles, ctable: renderCustomers, rtable: renderRentals, ptable: renderPayments,
+  mtable: renderMaintenance, reportBody: renderReports,
+  adminVehicleTable: renderAdminVehicles, adminCustomerTable: renderAdminCustomers
+});
+
+function isEmptyValue(v){ return v === null || v === undefined || v === ''; }
+function isNumeric(v){ return typeof v === 'number' || (typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v.trim())); }
+function compareValues(a, b){
+  if(isNumeric(a) && isNumeric(b)) return Number(a) - Number(b); // MySQL decimals arrive as strings
+  return String(a).localeCompare(String(b), 'tr', {numeric: true, sensitivity: 'base'});
+}
+function sortRows(tableId, rows){
+  const s = sortState[tableId];
+  if(!s || !s.key) return rows;
+  return [...rows].sort((x, y) => {
+    const a = x[s.key], b = y[s.key];
+    if(isEmptyValue(a) || isEmptyValue(b)) return isEmptyValue(a) === isEmptyValue(b) ? 0 : (isEmptyValue(a) ? 1 : -1); // empty values last
+    return compareValues(a, b) * s.dir;
+  });
+}
+function toggleSort(tableId, key){
+  const s = sortState[tableId];
+  sortState[tableId] = (s && s.key === key) ? { key, dir: -s.dir } : { key, dir: 1 };
+  if(tableId === 'vtable') syncVehicleSortMenu();
+  sortRenderers()[tableId]();
+}
+function updateSortIndicators(tableId){
+  const s = sortState[tableId] || {};
+  document.querySelectorAll(`th[data-sort-table="${tableId}"]`).forEach(th => {
+    th.classList.toggle('sort-asc', th.dataset.sortKey === s.key && s.dir === 1);
+    th.classList.toggle('sort-desc', th.dataset.sortKey === s.key && s.dir === -1);
+  });
+}
+function setupSortableHeaders(){
+  Object.entries(sortColumns).forEach(([tableId, keys]) => {
+    const tbody = document.getElementById(tableId);
+    const headRow = tbody?.closest('table')?.tHead?.rows[0];
+    if(!headRow) return;
+    [...headRow.cells].forEach((th, i) => {
+      const key = keys[i];
+      if(!key) return;
+      th.classList.add('sortable');
+      th.dataset.sortTable = tableId;
+      th.dataset.sortKey = key;
+      th.title = 'Click to sort';
+      th.addEventListener('click', () => toggleSort(tableId, key));
+    });
+  });
+}
+function vehicleSortMenu(){
+  const s = sortState.vtable;
+  const current = `${s.key}:${s.dir}`;
+  const known = vehicleSortOptions.some(([v]) => v === current);
+  return `<select id="vehicleSort" class="select" style="width:100%" onchange="onVehicleSort(this.value)">
+    ${vehicleSortOptions.map(([v, label]) => `<option value="${v}" ${v === current ? 'selected' : ''}>${label}</option>`).join('')}
+    ${known ? '' : '<option value="" selected disabled>Custom (column header)</option>'}
+  </select>`;
+}
+function syncVehicleSortMenu(){
+  const holder = document.getElementById('vehicleSortHolder');
+  if(holder) holder.innerHTML = vehicleSortMenu();
+}
+function onVehicleSort(value){
+  const [key, dir] = value.split(':');
+  sortState.vtable = { key, dir: Number(dir) };
+  syncVehicleSortMenu();
+  renderVehicles();
+}
+
+async function loadData(){
+  showError('');
+  try {
+    const [vehicles, customers, rentals, payments, paymentSummary, rentalSummary, branches, maintenance, vehicleFullDetails, categoryFeature, rentalInsurance, insuranceUsage, outOfService, complexPaymentInsurance, fleetSummary, monthlyRevenue, adminVehicles, adminCustomers, categories, features] = await Promise.all([
+      getJSON('/vehicles'),
+      getJSON('/customers'),
+      getJSON('/rentals'),
+      getJSON('/payments'),
+      getJSON('/payment-summary'),
+      getJSON('/rental-summary'),
+      getJSON('/branches'),
+      getJSON('/maintenance'),
+      getJSON('/vehicle-full-details'),
+      getJSON('/category-feature-report'),
+      getJSON('/rental-insurance-report'),
+      getJSON('/insurance-usage-report'),
+      getJSON('/out-of-service-report'),
+      getJSON('/complex-rental-payment-insurance-report'),
+      getJSON('/fleet-summary'),
+      getJSON('/monthly-revenue'),
+      getJSON('/admin/vehicles'),
+      getJSON('/admin/customers'),
+      getJSON('/admin/categories'),
+      getJSON('/admin/features')
+    ]);
+
+    Object.assign(state, {vehicles, customers, rentals, payments, paymentSummary: paymentSummary[0] || paymentSummary, rentalSummary: rentalSummary[0] || rentalSummary, branches, maintenance, adminVehicles, adminCustomers, categories, features});
+    Object.assign(state.reports, {vehicleFullDetails, categoryFeature, rentalInsurance, insuranceUsage, outOfService, complexPaymentInsurance, fleetSummary, monthlyRevenue});
+    buildVehicleFilters();
+    renderAll();
+  } catch (err) {
+    showError('Database API could not be loaded. Start server_admin.js on http://localhost:3000 and make sure database/drivefleet.sql was imported. Details: ' + err.message);
+    buildVehicleFilters();
+    renderAll();
+  }
+}
+
+function unique(arr){ return [...new Set(arr.filter(Boolean))].sort(); }
+function checkedValues(group){ return [...document.querySelectorAll(`[data-filter="${group}"]:checked`)].map(x => x.value); }
+function makeChecks(group, values, colors={}){
+  if(values.length === 0) return '<div class="muted small">No values from database</div>';
+  return values.map(v => `<label class="check-row"><input type="checkbox" data-filter="${group}" value="${esc(v)}" checked onchange="renderVehicles()">${colors[v] ? `<div class="badge-dot" style="background:${colors[v]}"></div>` : ''}<span>${esc(v)}</span></label>`).join('');
+}
+function buildVehicleFilters(){
+  const fuels = unique(state.vehicles.map(v => v.fuel));
+  const trans = unique(state.vehicles.map(v => v.trans));
+  const branches = unique(state.branches.map(b => b.city).concat(state.vehicles.map(v => v.branch)));
+  const categories = unique(
+    state.vehicles.flatMap(v => {
+      const cats = String(v.categories || '').split(',').map(x => x.trim()).filter(Boolean);
+      return cats.length ? cats : ['Uncategorized'];
+    })
+  );
+
+  const computedMaxPrice = Math.max(1500, ...state.vehicles.map(v => Number(v.price || 0)));
+  const sliderMax = Math.ceil(computedMaxPrice / 1000) * 1000;
+  if (maxPrice > sliderMax) maxPrice = sliderMax;
+
+  document.getElementById('fsidebar').innerHTML = `
+    <div>
+      <div class="f-label">Sort By</div>
+      <div id="vehicleSortHolder">${vehicleSortMenu()}</div>
+    </div>
+    <div>
+      <div class="f-label">Daily Price</div>
+      <input type="range" min="0" max="${sliderMax}" value="${maxPrice}" id="priceSlider" oninput="onPrice(this.value)">
+      <div class="slider-val"><span>₺0</span><span id="priceVal">₺${maxPrice}</span></div>
+    </div>
+    <div><div class="f-label">Fuel Type</div>${makeChecks('fuel', fuels.length ? fuels : ['Gasoline','Diesel','Electric','Hybrid'], fuelColors)}</div>
+    <div><div class="f-label">Transmission</div>${makeChecks('trans', trans.length ? trans : ['Automatic','Manual'])}</div>
+    <div><div class="f-label">Category</div>${makeChecks('category', categories)}</div>
+    <div><div class="f-label">Branch</div>${makeChecks('branch', branches.length ? branches : ['Istanbul','Izmir','Ankara','Antalya'])}</div>
+  `;
+}
+function onPrice(v){ maxPrice = parseInt(v,10); document.getElementById('priceVal').textContent = '₺' + v; renderVehicles(); }
+function filterStatus(s, btn){ currentStatus = s; document.querySelectorAll('.tabs .tab').forEach(b => b.classList.remove('active')); btn.classList.add('active'); renderVehicles(); }
+
+function renderVehicles(){
+  const fuels = checkedValues('fuel');
+  const trans = checkedValues('trans');
+  const branches = checkedValues('branch');
+  const categories = checkedValues('category');
+  const filtered = state.vehicles.filter(v => {
+    const rawCats = String(v.categories || '').split(',').map(x => x.trim()).filter(Boolean);
+    const vehicleCats = rawCats.length ? rawCats : ['Uncategorized'];
+    if(currentStatus !== 'all' && v.status !== currentStatus) return false;
+    if(Number(v.price || 0) > maxPrice) return false;
+    if(fuels.length && !fuels.includes(v.fuel)) return false;
+    if(trans.length && !trans.includes(v.trans)) return false;
+    if(branches.length && !branches.includes(v.branch)) return false;
+    if(categories.length && !categories.some(c => vehicleCats.includes(c))) return false;
+    return true;
+  });
+
+  document.getElementById('s-all').textContent = state.vehicles.length;
+  document.getElementById('s-av').textContent = state.vehicles.filter(v => v.status === 'AVAILABLE').length;
+  document.getElementById('s-re').textContent = state.vehicles.filter(v => v.status === 'RENTED').length;
+  document.getElementById('s-os').textContent = state.vehicles.filter(v => v.status === 'OUT_OF_SERVICE').length;
+  document.getElementById('vcount').textContent = filtered.length + ' vehicles';
+
+  const tb = document.getElementById('vtable');
+  updateSortIndicators('vtable');
+  if(!filtered.length){ tb.innerHTML = '<tr><td colspan="10"><div class="empty">No vehicles match the current filters.</div></td></tr>'; return; }
+  tb.innerHTML = sortRows('vtable', filtered).map(v => `<tr>
+    <td><strong style="font-weight:500">${safe(v.brand)}</strong> ${safe(v.model)} <span class="muted small">${safe(v.year)}</span></td>
+    <td class="muted small nowrap">${safe(v.plate)}</td>
+    <td>${pills(v.categories || 'Uncategorized')}</td>
+    <td>${pills(v.features)}</td>
+    <td><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:7px;height:7px;border-radius:50%;background:${fuelColors[v.fuel] || '#aaa'};display:inline-block"></span>${safe(v.fuel)}</span></td>
+    <td>${safe(v.trans)}</td>
+    <td><strong style="font-weight:500">${money(v.price)}</strong></td>
+    <td class="muted nowrap">${number(v.km)} km</td>
+    <td>${safe(v.branch)}</td>
+    <td>${badge(v.status)}</td>
+  </tr>`).join('');
+}
+
+function renderCustomers(){
+  document.getElementById('ccount').textContent = state.customers.length + ' records';
+  const tb = document.getElementById('ctable');
+  if(!state.customers.length){ tb.innerHTML = '<tr><td colspan="7"><div class="empty">No customers loaded from database.</div></td></tr>'; return; }
+  updateSortIndicators('ctable');
+  tb.innerHTML = sortRows('ctable', state.customers).map(c => `<tr>
+    <td><div style="display:flex;align-items:center;gap:8px"><div class="av">${initials(c.customer)}</div>${safe(c.customer)}</div></td>
+    <td class="muted">${safe(c.email)}</td><td>${safe(c.phone)}</td><td>${safe(c.license_no)}</td>
+    <td>${badge(c.role)}</td><td>${safe(c.total_rentals)}</td><td>${c.avg_rating ? '<span class="star">★</span> ' + c.avg_rating : '—'}</td>
+  </tr>`).join('');
+}
+function renderRentals(){
+  const s = state.rentalSummary || {};
+  document.getElementById('rs-total').textContent = s.total || state.rentals.length || 0;
+  document.getElementById('rs-active').textContent = s.active || 0;
+  document.getElementById('rs-pending').textContent = s.pending || 0;
+  document.getElementById('rs-completed').textContent = s.completed || 0;
+  document.getElementById('rcount').textContent = state.rentals.length + ' records';
+  const tb = document.getElementById('rtable');
+  if(!state.rentals.length){ tb.innerHTML = '<tr><td colspan="10"><div class="empty">No rentals loaded from database.</div></td></tr>'; return; }
+  updateSortIndicators('rtable');
+  tb.innerHTML = sortRows('rtable', state.rentals).map(r => `<tr>
+    <td class="muted nowrap">#${safe(r.rental_id)}</td><td>${safe(r.customer)}</td><td>${safe(r.vehicle)}</td><td>${safe(r.pickup)}</td><td>${safe(r.return_location)}</td>
+    <td class="nowrap">${safe(r.date_range)}</td><td>${safe(r.insurance_type)}</td><td>${money(r.insurance_daily_price)}</td><td><strong>${money(r.total)}</strong></td><td>${badge(r.status)}</td>
+  </tr>`).join('');
+}
+function renderPayments(){
+  const s = state.paymentSummary || {};
+  document.getElementById('ps-monthly').textContent = money(s.monthly_revenue);
+  document.getElementById('ps-card').textContent = money(s.credit_card_total);
+  document.getElementById('ps-cash').textContent = money(s.cash_total);
+  document.getElementById('ps-bank').textContent = money(s.bank_transfer_total);
+  document.getElementById('pcount').textContent = state.payments.length + ' records';
+  const tb = document.getElementById('ptable');
+  if(!state.payments.length){ tb.innerHTML = '<tr><td colspan="6"><div class="empty">No payments loaded from database.</div></td></tr>'; return; }
+  updateSortIndicators('ptable');
+  tb.innerHTML = sortRows('ptable', state.payments).map(p => `<tr>
+    <td class="muted nowrap">P-${safe(p.payment_id)}</td><td>#${safe(p.rental_id)}</td><td><strong>${money(p.amount)}</strong></td><td>${formatDate(p.payment_date)}</td><td>${safe(p.method)}</td><td>${badge(p.status)}</td>
+  </tr>`).join('');
+}
+function renderMaintenance(){
+  document.getElementById('mcount').textContent = state.maintenance.length + ' records';
+  const tb = document.getElementById('mtable');
+  if(!state.maintenance.length){ tb.innerHTML = '<tr><td colspan="10"><div class="empty">No maintenance records loaded from database.</div></td></tr>'; return; }
+  updateSortIndicators('mtable');
+  tb.innerHTML = sortRows('mtable', state.maintenance).map(m => `<tr>
+    <td class="muted nowrap">#${safe(m.maintenance_id)}</td><td>${safe(m.vehicle)}</td><td class="muted nowrap">${safe(m.plate)}</td><td>${badge(m.vehicle_status)}</td><td>${safe(m.branch)}</td><td>${safe(m.service_type)}</td><td>${safe(m.description)}</td><td>${money(m.cost)}</td><td>${formatDate(m.service_date)}</td><td>${badge(m.maintenance_status)}</td>
+  </tr>`).join('');
+}
+
+const reportColumns = {
+  vehicleFullDetails: ['vehicle_id','vehicle','year','plate','fuel_type','transmission','daily_rate','mileage','status','branch_city','branch_name','categories','features'],
+  categoryFeature: ['branch','category','vehicle_count','vehicles','available_features'],
+  rentalInsurance: ['rental_id','customer','vehicle','plate','pickup_city','return_city','insurance_type','insurance_daily_price','coverage_description','rental_days','total_amount','status'],
+  insuranceUsage: ['insurance_id','insurance_type','daily_price','rental_count','estimated_insurance_revenue'],
+  outOfService: ['vehicle_id','vehicle','plate','branch','vehicle_status','service_type','description','cost','service_date','maintenance_status','last_rental_end_date'],
+  complexPaymentInsurance: ['rental_id','customer','vehicle','plate','insurance_type','insurance_daily_price','rental_days','rental_total','paid_amount','payment_result','rental_status'],
+  fleetSummary: ['city','total_vehicles','available','rented','out_of_service','rented_rate_percent'],
+  monthlyRevenue: ['month','method','total_revenue','transaction_count']
+};
+function human(k){ return k.replaceAll('_',' ').replace(/\b\w/g, m => m.toUpperCase()); }
+function formatCell(k,v){
+  if(['daily_rate','insurance_daily_price','total_amount','cost','rental_total','paid_amount','estimated_insurance_revenue','total_revenue'].includes(k)) return money(v);
+  if(['status','vehicle_status','maintenance_status','rental_status','payment_result'].includes(k)) return badge(v);
+  if(['features','categories','available_features'].includes(k)) return pills(v);
+  if(String(k).includes('date')) return formatDate(v);
+  return safe(v);
+}
+function renderReports(){
+  const key = document.getElementById('reportSelect').value;
+  const cols = reportColumns[key] || Object.keys((state.reports[key] || [])[0] || {});
+  if(sortState.reportBody && !cols.includes(sortState.reportBody.key)) delete sortState.reportBody; // column not in this report
+  const rows = sortRows('reportBody', state.reports[key] || []);
+  document.getElementById('reportHead').innerHTML = `<tr>${cols.map(c => `<th class="sortable" data-sort-table="reportBody" data-sort-key="${c}" title="Click to sort" onclick="toggleSort('reportBody','${c}')">${human(c)}</th>`).join('')}</tr>`;
+  updateSortIndicators('reportBody');
+  document.getElementById('reportBody').innerHTML = rows.length
+    ? rows.map(row => `<tr>${cols.map(c => `<td>${formatCell(c,row[c])}</td>`).join('')}</tr>`).join('')
+    : `<tr><td colspan="${cols.length || 1}"><div class="empty">No report data loaded from database.</div></td></tr>`;
+}
+
+
+function parseIdList(value){
+  return String(value || '').split(',').map(x => Number(x.trim())).filter(Number.isFinite);
+}
+function selectedRelationIds(group){
+  return [...document.querySelectorAll(`[data-admin-relation="${group}"]:checked`)].map(x => Number(x.value));
+}
+function renderRelationChecks(containerId, group, items, selectedIds=[]){
+  const selected = new Set((selectedIds || []).map(Number));
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  if(!items || items.length === 0){
+    el.innerHTML = '<span class="muted small">No options loaded from database.</span>';
+    return;
+  }
+  el.innerHTML = items.map(item => `
+    <label class="admin-check">
+      <input type="checkbox" data-admin-relation="${group}" value="${Number(item.id)}" ${selected.has(Number(item.id)) ? 'checked' : ''}>
+      <span>${safe(item.name)}</span>
+    </label>
+  `).join('');
+}
+function renderVehicleRelations(vehicle=null){
+  renderRelationChecks('vehicleCategoryChecks', 'category', state.categories, parseIdList(vehicle?.category_ids));
+  renderRelationChecks('vehicleFeatureChecks', 'feature', state.features, parseIdList(vehicle?.feature_ids));
+}
+
+function populateAdminBranchOptions(selectedId){
+  const el = document.getElementById('vBranch');
+  el.innerHTML = state.branches.map(b => `<option value="${Number(b.id)}" ${String(b.id) === String(selectedId) ? 'selected' : ''}>${safe(b.city)} — ${safe(b.name)}</option>`).join('');
+}
+function openVehicleForm(vehicle=null){
+  document.getElementById('vehicleForm').classList.add('open');
+  document.getElementById('vehicleSubmitBtn').textContent = vehicle ? 'Update Vehicle' : 'Add Vehicle';
+  document.getElementById('vehicleId').value = vehicle?.id || '';
+  document.getElementById('vBrand').value = vehicle?.brand || '';
+  document.getElementById('vModel').value = vehicle?.model || '';
+  document.getElementById('vYear').value = vehicle?.year || new Date().getFullYear();
+  document.getElementById('vPlate').value = vehicle?.plate || '';
+  document.getElementById('vFuel').value = vehicle?.fuel_type || 'Gasoline';
+  document.getElementById('vTrans').value = vehicle?.transmission || 'Automatic';
+  document.getElementById('vPrice').value = vehicle?.daily_rate || '';
+  document.getElementById('vKm').value = vehicle?.mileage || 0;
+  document.getElementById('vStatus').value = vehicle?.status || 'AVAILABLE';
+  populateAdminBranchOptions(vehicle?.branch_id || state.branches[0]?.id || 1);
+  renderVehicleRelations(vehicle);
+  document.getElementById('vBrand').focus();
+}
+function editVehicle(id){ openVehicleForm(state.adminVehicles.find(v => Number(v.id) === id) || null); }
+function closeVehicleForm(){ document.getElementById('vehicleForm').classList.remove('open'); document.getElementById('vehicleForm').reset(); document.getElementById('vehicleId').value = ''; renderVehicleRelations(null); }
+async function submitVehicle(e){
+  e.preventDefault();
+  const id = document.getElementById('vehicleId').value;
+  const payload = {
+    brand: document.getElementById('vBrand').value.trim(),
+    model: document.getElementById('vModel').value.trim(),
+    year: Number(document.getElementById('vYear').value),
+    plate: document.getElementById('vPlate').value.trim(),
+    fuel_type: document.getElementById('vFuel').value,
+    transmission: document.getElementById('vTrans').value,
+    daily_rate: Number(document.getElementById('vPrice').value),
+    mileage: Number(document.getElementById('vKm').value),
+    branch_id: Number(document.getElementById('vBranch').value),
+    status: document.getElementById('vStatus').value,
+    category_ids: selectedRelationIds('category'),
+    feature_ids: selectedRelationIds('feature')
+  };
+  try {
+    await adminFetch(id ? `/admin/vehicles/${id}` : '/admin/vehicles', id ? 'PUT' : 'POST', payload);
+  } catch (_) { return; } // adminFetch already shows the error message
+  currentStatus = 'all';
+  document.querySelectorAll('.tabs .tab').forEach((b, i) => b.classList.toggle('active', i === 0));
+  closeVehicleForm();
+  await loadData();
+}
+async function deleteVehicle(id){
+  if(!confirm('Delete this vehicle? If it has rental records, backend will block it.')) return;
+  try { await adminFetch(`/admin/vehicles/${id}`, 'DELETE'); } catch (_) { return; }
+  await loadData();
+}
+function renderAdminVehicles(){
+  document.getElementById('adminVehicleCount').textContent = state.adminVehicles.length;
+  const tb = document.getElementById('adminVehicleTable');
+  if(!state.adminVehicles.length){ tb.innerHTML = '<tr><td colspan="12"><div class="empty">No admin vehicle data loaded.</div></td></tr>'; return; }
+  updateSortIndicators('adminVehicleTable');
+  tb.innerHTML = sortRows('adminVehicleTable', state.adminVehicles).map(v => `<tr>
+    <td class="actions-col"><div class="row-actions"><button class="btn small" onclick="editVehicle(${Number(v.id)})">Update</button><button class="btn small danger" onclick="deleteVehicle(${Number(v.id)})">Delete</button></div></td>
+    <td class="muted">${safe(v.id)}</td><td><strong>${safe(v.brand)}</strong> ${safe(v.model)} <span class="muted small">${safe(v.year)}</span></td><td class="muted nowrap">${safe(v.plate)}</td>
+    <td>${pills(v.category_names)}</td><td>${pills(v.feature_names)}</td><td>${safe(v.fuel_type)}</td><td>${safe(v.transmission)}</td><td>${money(v.daily_rate)}</td><td>${number(v.mileage)} km</td><td>${safe(v.branch_city)}</td><td>${badge(v.status)}</td>
+  </tr>`).join('');
+}
+function openCustomerForm(customer=null){
+  document.getElementById('customerForm').classList.add('open');
+  document.getElementById('customerSubmitBtn').textContent = customer ? 'Update Customer' : 'Add Customer';
+  document.getElementById('customerId').value = customer?.id || '';
+  document.getElementById('cName').value = customer?.full_name || '';
+  document.getElementById('cEmail').value = customer?.email || '';
+  document.getElementById('cPhone').value = customer?.phone || '';
+  document.getElementById('cLicense').value = customer?.license_no || '';
+  document.getElementById('cRole').value = customer?.role || 'customer';
+  document.getElementById('cRating').value = customer?.avg_rating || '';
+  document.getElementById('cRentals').value = customer?.total_rentals ?? 0;
+  document.getElementById('cName').focus();
+}
+function editCustomer(id){ openCustomerForm(state.adminCustomers.find(c => Number(c.id) === id) || null); }
+function closeCustomerForm(){ document.getElementById('customerForm').classList.remove('open'); document.getElementById('customerForm').reset(); document.getElementById('customerId').value = ''; }
+async function submitCustomer(e){
+  e.preventDefault();
+  const id = document.getElementById('customerId').value;
+  const ratingRaw = document.getElementById('cRating').value;
+  const payload = {
+    full_name: document.getElementById('cName').value.trim(),
+    email: document.getElementById('cEmail').value.trim(),
+    phone: document.getElementById('cPhone').value.trim(),
+    license_no: document.getElementById('cLicense').value.trim(),
+    role: document.getElementById('cRole').value,
+    avg_rating: ratingRaw === '' ? null : Number(ratingRaw),
+    total_rentals: Number(document.getElementById('cRentals').value || 0)
+  };
+  try {
+    await adminFetch(id ? `/admin/customers/${id}` : '/admin/customers', id ? 'PUT' : 'POST', payload);
+  } catch (_) { return; } // adminFetch already shows the error message
+  closeCustomerForm();
+  await loadData();
+}
+async function deleteCustomer(id){
+  if(!confirm('Delete this customer? If the customer has rental records, backend will block it.')) return;
+  try { await adminFetch(`/admin/customers/${id}`, 'DELETE'); } catch (_) { return; }
+  await loadData();
+}
+function renderAdminCustomers(){
+  document.getElementById('adminCustomerCount').textContent = state.adminCustomers.length;
+  const tb = document.getElementById('adminCustomerTable');
+  if(!state.adminCustomers.length){ tb.innerHTML = '<tr><td colspan="9"><div class="empty">No admin customer data loaded.</div></td></tr>'; return; }
+  updateSortIndicators('adminCustomerTable');
+  tb.innerHTML = sortRows('adminCustomerTable', state.adminCustomers).map(c => `<tr>
+    <td class="actions-col"><div class="row-actions"><button class="btn small" onclick="editCustomer(${Number(c.id)})">Update</button><button class="btn small danger" onclick="deleteCustomer(${Number(c.id)})">Delete</button></div></td>
+    <td class="muted">${safe(c.id)}</td><td><div style="display:flex;align-items:center;gap:8px"><div class="av">${initials(c.full_name)}</div>${safe(c.full_name)}</div></td>
+    <td class="muted">${safe(c.email)}</td><td>${safe(c.phone)}</td><td>${safe(c.license_no)}</td><td>${badge(c.role === 'admin' ? 'Admin' : 'Customer')}</td><td>${safe(c.total_rentals)}</td><td>${c.avg_rating ? '<span class="star">★</span> ' + c.avg_rating : '—'}</td>
+  </tr>`).join('');
+}
+async function adminFetch(path, method, body=null){
+  showError('');
+  const res = await fetch(`${API_BASE}${path}`, {method, headers: {'Content-Type':'application/json'}, body: body ? JSON.stringify(body) : undefined});
+  if(!res.ok){
+    let msg = `${method} ${path} returned ${res.status}`;
+    try { const err = await res.json(); msg = err.error || msg; } catch(_) {}
+    showError(msg);
+    throw new Error(msg);
+  }
+  return res.status === 204 ? null : res.json();
+}
+function renderAdmin(){ renderAdminVehicles(); renderAdminCustomers(); }
+
+function renderAll(){ renderVehicles(); renderCustomers(); renderRentals(); renderPayments(); renderMaintenance(); renderReports(); renderAdmin(); }
+
+function showPage(page, btn){
+  state.page = page;
+  document.querySelectorAll('.s-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const pages = ['vehicles','customers','rentals','payments','maintenance','reports','admin'];
+  const titles = {vehicles:'Vehicle Fleet', customers:'Customers', rentals:'Rentals', payments:'Payments', maintenance:'Maintenance', reports:'Reports', admin:'Admin Panel'};
+  pages.forEach(p => document.getElementById('pg-' + p).style.display = p === page ? '' : 'none');
+  document.getElementById('ptitle').textContent = titles[page];
+  document.getElementById('tabbar').style.display = page === 'vehicles' ? '' : 'none';
+  document.getElementById('fsidebar').style.display = page === 'vehicles' ? 'flex' : 'none';
+  if(page === 'vehicles') renderVehicles();
+  if(page === 'reports') renderReports();
+  if(page === 'admin') renderAdmin();
+}
+
+document.addEventListener('DOMContentLoaded', () => { setupSortableHeaders(); loadData(); });
+</script>
+</body>
+</html>
